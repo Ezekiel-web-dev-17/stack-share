@@ -1,14 +1,14 @@
-'use client'
+"use client";
 
-import { fadeInUp, staggerContainer } from '@/lib/animations';
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import DeveloperIcon from '@/assets/icons/developer-icon.svg';
-import DesignerIcon from '@/assets/icons/designer-icon.svg';
-import MarketerIcon from '@/assets/icons/marketer-icon.svg';
-import FounderIcon from '@/assets/icons/founder-icon.svg';
-import WriterIcon from '@/assets/icons/writer-icon.svg';
-import ProductManagerIcon from '@/assets/icons/product-manager-icon.svg';
+import { fadeInUp, staggerContainer } from "@/lib/animations";
+import { motion } from "framer-motion";
+import Image from "next/image";
+import DeveloperIcon from "@/assets/icons/developer-icon.svg";
+import DesignerIcon from "@/assets/icons/designer-icon.svg";
+import MarketerIcon from "@/assets/icons/marketer-icon.svg";
+import FounderIcon from "@/assets/icons/founder-icon.svg";
+import WriterIcon from "@/assets/icons/writer-icon.svg";
+import ProductManagerIcon from "@/assets/icons/product-manager-icon.svg";
 
 const ROLES = [
   { icon: DeveloperIcon, label: "Developer" },
@@ -52,15 +52,17 @@ const BrowseByRole = () => {
               className="card-glow flex cursor-pointer flex-col items-center gap-3 rounded-xl border border-border bg-surface p-5 transition-all"
             >
               <span className="text-3xl">
-                  <Image src={role.icon} alt='icon' />
+                <Image src={role.icon} alt="icon" />
               </span>
-              <span className="text-sm font-medium text-white">{role.label}</span>
+              <span className="text-sm font-medium text-white">
+                {role.label}
+              </span>
             </div>
           ))}
         </motion.div>
       </div>
     </section>
   );
-}
+};
 
-export default BrowseByRole
+export default BrowseByRole;

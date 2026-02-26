@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { fadeInDown } from "@/lib/animations";
+import Image from "next/image";
+import Logo from "../assets/icons/logo.svg";
 
 const NAV_LINKS = ["Discover", "Community", "Newsletter"];
 
@@ -16,11 +18,13 @@ const Navbar = () => {
   }, []);
 
   return (
-    <header className={`sticky top-0 z-50 min-h-18.25 flex flex-col items-center justify-center ${
-          scrolled
-            ? "bg-background/80 backdrop-blur-xl border-b border-border"
-            : "bg-transparent"
-        }`}>
+    <header
+      className={`sticky top-0 z-50 min-h-18.25 flex flex-col items-center justify-center ${
+        scrolled
+          ? "bg-background/80 backdrop-blur-xl border-b border-border"
+          : "bg-transparent"
+      }`}
+    >
       <motion.nav
         variants={fadeInDown}
         initial="hidden"
@@ -30,9 +34,7 @@ const Navbar = () => {
         <div className="mx-auto flex  items-center justify-between py-4">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-white">S</span>
-            </div>
+            <Image src={Logo} alt="Logo" width={32} height={32} />
             <span className="text-lg font-bold text-white">StackShare</span>
           </div>
           {/* Links */}
@@ -40,7 +42,7 @@ const Navbar = () => {
             {NAV_LINKS.map((link) => (
               <a
                 key={link}
-                href="#"
+                href={link === "Discover" ? "/discover" : "#"}
                 className="text-sm text-muted transition-colors hover:text-white"
               >
                 {link}

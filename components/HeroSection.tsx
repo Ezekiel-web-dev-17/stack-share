@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { fadeInUp } from "@/lib/animations";
 import { useEffect, useState } from "react";
@@ -11,14 +11,19 @@ const ROTATING_WORDS = [
   "Creative Pipelines",
 ];
 
-const TRENDING_TAGS = ["SEO Writing", "Code Refactoring", "Logo Design", "Podcast Editing"];
+const TRENDING_TAGS = [
+  "SEO Writing",
+  "Code Refactoring",
+  "Logo Design",
+  "Podcast Editing",
+];
 
 const HeroSection = () => {
   const [wordIndex, setWordIndex] = useState(0);
   useEffect(() => {
     const interval = setInterval(
       () => setWordIndex((prev) => (prev + 1) % ROTATING_WORDS.length),
-      3000
+      3000,
     );
     return () => clearInterval(interval);
   }, []);
@@ -39,7 +44,8 @@ const HeroSection = () => {
           custom={0}
         >
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary">
-            <div className="size-2 bg-accent-green rounded-full" /> Over 1,200 new workflows added this week
+            <div className="size-2 bg-accent-green rounded-full" /> Over 1,200
+            new workflows added this week
           </span>
         </motion.div>
 
@@ -129,7 +135,10 @@ const HeroSection = () => {
           {TRENDING_TAGS.map((tag) => (
             <motion.button
               key={tag}
-              whileHover={{ scale: 1.05, backgroundColor: "rgba(14,165,233,0.15)" }}
+              whileHover={{
+                scale: 1.05,
+                backgroundColor: "rgba(14,165,233,0.15)",
+              }}
               className="rounded-full border border-border bg-surface-light/50 px-3 py-1 text-xs text-muted transition-colors hover:text-white"
             >
               {tag}
@@ -139,6 +148,6 @@ const HeroSection = () => {
       </div>
     </section>
   );
-}
+};
 
-export default HeroSection
+export default HeroSection;
