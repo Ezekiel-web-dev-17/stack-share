@@ -6,7 +6,7 @@ import { fadeInDown } from "@/lib/animations";
 import Image from "next/image";
 import Logo from "../assets/icons/logo.svg";
 
-const NAV_LINKS = ["Discover", "Community", "Newsletter"];
+const NAV_LINKS = ["Discover", "Community", "Newsletter", "Explore"];
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
