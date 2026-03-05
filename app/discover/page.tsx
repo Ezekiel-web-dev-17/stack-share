@@ -23,6 +23,9 @@ export default function Discover() {
       <DiscoverNavbar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
       <div className="flex items-start w-full border-2 border-[#223949] relative">
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
           className={`max-w-72 absolute top-0 w-2/3 min-h-[calc(100dvh+20px)] right-0  bg-background z-10 lg:hidden ${menuOpen ? "block" : "hidden"}`}
         >
           <DiscoverAside />

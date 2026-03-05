@@ -2,7 +2,7 @@ import arrowIcon from "../assets/icons/arrow-icon.svg";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-function Pagination() {
+function Pagination({ page, setPage, totalPages }) {
   return (
     <motion.div
       className="flex items-center justify-center mt-16"
@@ -23,7 +23,7 @@ function Pagination() {
           />
         </motion.button>
 
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: totalPages }).map((_, i) => (
           <motion.button
             key={i}
             whileTap={{ scale: 0.97 }}
