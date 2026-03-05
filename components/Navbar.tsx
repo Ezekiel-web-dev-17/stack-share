@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { fadeInDown } from "@/lib/animations";
+import Image from "next/image";
+import Logo from "../assets/icons/logo.svg";
+import Link from "next/link";
 
-const NAV_LINKS = ["Discover", "Community", "Newsletter"];
+const NAV_LINKS = ["Discover", "Community", "Newsletter", "Explore"];
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -16,11 +19,13 @@ const Navbar = () => {
   }, []);
 
   return (
-    <header className={`sticky top-0 z-50 min-h-18.25 flex flex-col items-center justify-center ${
-          scrolled
-            ? "bg-background/80 backdrop-blur-xl border-b border-border"
-            : "bg-transparent"
-        }`}>
+    <header
+      className={`sticky top-0 z-50 min-h-18.25 flex flex-col items-center justify-center ${
+        scrolled
+          ? "bg-background/80 backdrop-blur-xl border-b border-border"
+          : "bg-transparent"
+      }`}
+    >
       <motion.nav
         variants={fadeInDown}
         initial="hidden"
@@ -30,9 +35,7 @@ const Navbar = () => {
         <div className="mx-auto flex  items-center justify-between py-4">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-white">S</span>
-            </div>
+            <Image src={Logo} alt="Logo" width={32} height={32} />
             <span className="text-lg font-bold text-white">StackShare</span>
           </div>
           {/* Links */}
@@ -40,7 +43,7 @@ const Navbar = () => {
             {NAV_LINKS.map((link) => (
               <a
                 key={link}
-                href="#"
+                href={link === "Discover" ? "/discover" : "#"}
                 className="text-sm text-muted transition-colors hover:text-white"
               >
                 {link}
@@ -55,13 +58,15 @@ const Navbar = () => {
             >
               Login
             </a>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="rounded-lg bg-primar px-4 py-2 bg-primary text-sm font-semibold text-white transition-colors hover:bg-primary-dark cursor-pointer"
-            >
-              Submit Stack
-            </motion.button>
+            <Link href="/create-workflow">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="rounded-lg bg-primar px-4 py-2 bg-primary text-sm font-semibold text-white transition-colors hover:bg-primary-dark cursor-pointer"
+              >
+                Submit Stack
+              </motion.button>
+            </Link>
           </div>
         </div>
       </motion.nav>

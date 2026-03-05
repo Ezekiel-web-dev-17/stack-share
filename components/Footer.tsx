@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { fadeInUp } from '@/lib/animations';
-import { motion } from 'framer-motion'
+import { fadeInUp } from "@/lib/animations";
+import { motion } from "framer-motion";
 
 const FOOTER_SECTIONS = [
   {
@@ -11,7 +11,6 @@ const FOOTER_SECTIONS = [
   { title: "Resources", links: ["Blog", "Community", "Newsletter", "API"] },
   { title: "Company", links: ["About", "Careers", "Privacy", "Terms"] },
 ];
-
 
 const Footer = () => {
   return (
@@ -43,7 +42,9 @@ const Footer = () => {
           {/* Link columns */}
           {FOOTER_SECTIONS.map((section) => (
             <div key={section.title}>
-              <h4 className="text-sm font-semibold text-white">{section.title}</h4>
+              <h4 className="text-sm font-semibold text-white">
+                {section.title}
+              </h4>
               <ul className="mt-4 space-y-3">
                 {section.links.map((link) => (
                   <li key={link}>
@@ -67,13 +68,19 @@ const Footer = () => {
           </p>
           <div className="flex gap-4">
             {/* Twitter / X */}
-            <a href="#" className="text-muted transition-colors hover:text-white">
+            <a
+              href="#"
+              className="text-muted transition-colors hover:text-white"
+            >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
             </a>
             {/* GitHub */}
-            <a href="#" className="text-muted transition-colors hover:text-white">
+            <a
+              href="#"
+              className="text-muted transition-colors hover:text-white"
+            >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path
                   fillRule="evenodd"
@@ -87,6 +94,6 @@ const Footer = () => {
       </div>
     </motion.footer>
   );
-}
+};
 
-export default Footer
+export default Footer;
