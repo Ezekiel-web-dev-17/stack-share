@@ -2,7 +2,15 @@
 
 import Footer from "@/components/Footer";
 import { Space_Grotesk } from "next/font/google";
-import { useEffect, useState, useOptimistic, startTransition, useCallback, useMemo, useRef } from "react";
+import {
+  useEffect,
+  useState,
+  useOptimistic,
+  startTransition,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import likes from "../../assets/icons/likeIcon.svg";
 import views from "../../assets/icons/viewsEye.svg";
 import Person from "../../assets/icons/personIcon.svg";
@@ -52,12 +60,16 @@ interface Workflow {
 
 const TABS: string[] = [
   "All",
-  "Marketing",
-  "Engineering",
+  "Developer",
+  "Designer",
+  "Marketer",
+  "Product Manager",
+  "Data Analyst",
+  "Content Creator",
   "Operations",
-  "Creative",
-  "Research",
+  "Researcher",
   "Video Editor",
+  "Sales",
 ];
 
 const SORT_BY: string[] = ["Trending", "Newest", "Top Rated"];
@@ -86,7 +98,12 @@ function timeAgo(date: string): string {
   return "just now";
 }
 
-function buildWorkflowUrl(base: string, tab: string, order: string, page: number): string {
+function buildWorkflowUrl(
+  base: string,
+  tab: string,
+  order: string,
+  page: number,
+): string {
   const params = new URLSearchParams({
     orderBy: order.toLowerCase().replace(" ", "-"),
     page: String(page),
@@ -100,22 +117,37 @@ function buildWorkflowUrl(base: string, tab: string, order: string, page: number
 
 const pageVariants = {
   hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+  },
 } as const;
 
 const headerVariants = {
   hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: 0.08 } },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: 0.08 },
+  },
 } as const;
 
 const cardListVariants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.07, delayChildren: 0.1 },
+  },
 } as const;
 
 const cardVariants = {
   hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+  },
 } as const;
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -135,9 +167,8 @@ export default function Explore() {
   const headers = useMemo<HeadersInit>(
     () => ({
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`,
     }),
-    []
+    [],
   );
 
   // ─── Optimistic likes ─────────────────────────────────────────────────────
@@ -146,8 +177,8 @@ export default function Explore() {
     workflows,
     (state: Workflow[], update: { id: string }) =>
       state.map((wf) =>
-        wf.id === update.id ? { ...wf, likes: wf.likes + 1 } : wf
-      )
+        wf.id === update.id ? { ...wf, likes: wf.likes + 1 } : wf,
+      ),
   );
 
   const updateLike = useCallback(
@@ -156,11 +187,13 @@ export default function Explore() {
         addOptimisticWorkflowUpdate({ id });
       });
 
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/workflows/${id}/like`, {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      fetch(`/api/workflows/${id}/like`, {
         method: "POST",
         headers: {
           ...headers,
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_ACCESS_TOKEN}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       })
         .then((res) => {
@@ -168,19 +201,25 @@ export default function Explore() {
           return res.json() as Promise<{ data: Workflow }>;
         })
         .then(({ data }) =>
-          setWorkflows((prev) => prev.map((w) => (w.id === data.id ? data : w)))
+          setWorkflows((prev) =>
+            prev.map((w) => (w.id === data.id ? data : w)),
+          ),
         )
         .catch((err) => console.error("[like]", err));
     },
-    [headers, addOptimisticWorkflowUpdate]
+    [headers, addOptimisticWorkflowUpdate],
   );
 
   // ─── Fetch tools once ─────────────────────────────────────────────────────
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/tools`, {
-      headers,
-      cache: "force-cache",
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+    fetch(`/api/tools`, {
+      headers: {
+        ...headers,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
     })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load tools");
@@ -206,20 +245,31 @@ export default function Explore() {
       setError(null);
 
       const url = buildWorkflowUrl(
-        process.env.NEXT_PUBLIC_API_URL ?? "",
+        "/api",
         tab,
         order,
-        pg
+        pg,
       );
 
-      fetch(url, { headers, signal: controller.signal })
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      fetch(url, { 
+        headers: {
+          ...headers,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        }, 
+        signal: controller.signal 
+      })
         .then((res) => {
           if (!res.ok) throw new Error(`Server error ${res.status}`);
-          return res.json() as Promise<{ data: Workflow[]; meta: { totalPages: number } }>;
+          return res.json() as Promise<{
+            data: Workflow[];
+            meta: { totalPages: number };
+          }>;
         })
         .then(({ data, meta }) => {
-          setWorkflows(data);
-          setTotalPages(meta.totalPages);
+          setWorkflows(data || []);
+          setTotalPages(meta?.totalPages || 1);
         })
         .catch((err) => {
           if ((err as Error).name === "AbortError") return; // stale request — ignore
@@ -230,7 +280,7 @@ export default function Explore() {
           if (!controller.signal.aborted) setLoading(false);
         });
     },
-    [headers]
+    [headers],
   );
 
   useEffect(() => {
@@ -256,7 +306,9 @@ export default function Explore() {
           initial="hidden"
           animate="show"
         >
-          <h1 className="text-4xl font-bold text-white">Explore All Workflows</h1>
+          <h1 className="text-4xl font-bold text-white">
+            Explore All Workflows
+          </h1>
           <p className="font-normal text-lg text-[#94A3B8] mt-1">
             Find and share the ultimate AI tool stacks for modern digital work.
           </p>
@@ -264,13 +316,16 @@ export default function Explore() {
 
         <div className="flex justify-center items-center flex-col py-8 gap-8">
           {/* ── Filter bar ── */}
-          <div className="flex flex-col lg:flex-row items-start justify-start gap-2 lg:gap-0 lg:justify-between lg:items-center w-full border-b border-[#1E293B] pb-2">
-            <nav aria-label="Category filter" className="overflow-x-scroll w-full">
-              <div className="flex gap-2">
+          <div className="flex flex-col lg:flex-row items-start justify-start gap-2 lg:gap-6 lg:justify-between lg:items-center w-full border-b border-[#1E293B] pb-2">
+            <nav
+              aria-label="Category filter"
+              className="overflow-x-scroll lg:overflow-x-auto w-full"
+            >
+              <div className="flex gap-1">
                 {TABS.map((tab) => (
                   <button
                     key={tab}
-                    className={`py-1 lg:py-2 px-2 lg:px-4 font-bold text-xs lg:text-sm cursor-pointer transition-colors duration-200 ${
+                    className={`py-1 lg:py-2 px-2 lg:px-3 font-bold text-xs lg:text-sm cursor-pointer transition-colors duration-200 ${
                       tab === currentTab
                         ? "border-b-2 border-[#0D93F2] text-white"
                         : "text-[#64748B] hover:text-[#94A3B8]"
@@ -358,7 +413,9 @@ export default function Explore() {
           {/* ── Error state ── */}
           {!loading && error && (
             <div className="flex flex-col items-center gap-4 py-16 text-center">
-              <p className="text-red-400 text-lg font-semibold">Failed to load workflows</p>
+              <p className="text-red-400 text-lg font-semibold">
+                Failed to load workflows
+              </p>
               <p className="text-sm text-[#94A3B8]">{error}</p>
               <button
                 onClick={() => fetchWorkflows(currentTab, currentOrder, page)}
@@ -397,7 +454,8 @@ export default function Explore() {
                               </span>
                               <Image src={Person} alt="person icon" />
                               <p className="text-sm text-[#94A3B8]">
-                                @{workflow.author.name}&nbsp;•&nbsp;{timeAgo(workflow.createdAt)}
+                                @{workflow.author.name}&nbsp;•&nbsp;
+                                {timeAgo(workflow.createdAt)}
                               </p>
                             </div>
                             <h2 className="text-[#F1F5F9] text-xl font-bold cursor-pointer hover:text-[#0D93F2] transition-colors duration-200">
@@ -415,7 +473,11 @@ export default function Explore() {
                                 className="flex gap-1.5 items-center cursor-pointer text-sm font-medium text-[#94A3B8]"
                                 title={`${workflow.views} view${workflow.views !== 1 ? "s" : ""}`}
                               >
-                                <Image src={views} className="w-4" alt="views" />
+                                <Image
+                                  src={views}
+                                  className="w-4"
+                                  alt="views"
+                                />
                                 {formatCount(workflow.views)}
                               </div>
                               <button
@@ -424,7 +486,11 @@ export default function Explore() {
                                 className="text-[#0D93F2] flex gap-1.5 items-center cursor-pointer text-sm font-bold bg-transparent border-none p-0"
                                 onClick={() => updateLike(workflow.id)}
                               >
-                                <Image src={likes} className="w-4" alt="likes" />
+                                <Image
+                                  src={likes}
+                                  className="w-4"
+                                  alt="likes"
+                                />
                                 {formatCount(workflow.likes)}
                               </button>
                             </div>
@@ -442,28 +508,32 @@ export default function Explore() {
                           {/* Tool chips */}
                           <div className="absolute gap-2 flex items-center -bottom-9">
                             <div className="flex -gap-4 relative">
-                              {workflow.toolStack.slice(0, 3).map((toolName, i) => {
-                                const matchedTool = tools.find((t) => t.name === toolName);
-                                return (
-                                  <div
-                                    key={`${toolName}-${i}`}
-                                    className="px-2 py-2 bg-[#1E293B] rounded-lg border-l-2 border-background z-0 place-content-center"
-                                    title={toolName}
-                                  >
-                                    {matchedTool?.image ? (
-                                      <Image
-                                        src={matchedTool.image}
-                                        width={15}
-                                        height={15}
-                                        alt={toolName}
-                                        className="max-w-3.75 max-h-3.75"
-                                      />
-                                    ) : (
-                                      <span className="w-3.75 h-3.75 rounded bg-border-light inline-block" />
-                                    )}
-                                  </div>
-                                );
-                              })}
+                              {workflow.toolStack
+                                .slice(0, 3)
+                                .map((toolName, i) => {
+                                  const matchedTool = tools.find(
+                                    (t) => t.name === toolName,
+                                  );
+                                  return (
+                                    <div
+                                      key={`${toolName}-${i}`}
+                                      className="px-2 py-2 bg-[#1E293B] rounded-lg border-l-2 border-background z-0 place-content-center"
+                                      title={toolName}
+                                    >
+                                      {matchedTool?.image ? (
+                                        <Image
+                                          src={matchedTool.image}
+                                          width={15}
+                                          height={15}
+                                          alt={toolName}
+                                          className="max-w-3.75 max-h-3.75"
+                                        />
+                                      ) : (
+                                        <span className="w-3.75 h-3.75 rounded bg-border-light inline-block" />
+                                      )}
+                                    </div>
+                                  );
+                                })}
                             </div>
                             {extraTools > 0 && (
                               <p className="text-xs text-[#64748B] font-medium">
@@ -484,7 +554,9 @@ export default function Explore() {
                     initial="hidden"
                     animate="show"
                   >
-                    <p className="text-lg font-semibold text-[#F1F5F9]">No workflows found</p>
+                    <p className="text-lg font-semibold text-[#F1F5F9]">
+                      No workflows found
+                    </p>
                     <p className="text-sm text-[#64748B]">
                       Try a different category or sort order.
                     </p>

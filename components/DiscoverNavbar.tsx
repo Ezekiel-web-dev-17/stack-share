@@ -12,6 +12,8 @@ import CloseIcon from "../assets/icons/close-icon.svg";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 
+import { useDiscover } from "./DiscoverContext";
+
 const NAV_LINKS = ["Discover", "Community", "Newsletter", "Explore"];
 
 const Navbar = ({
@@ -22,6 +24,7 @@ const Navbar = ({
   setMenuOpen: (open: boolean) => void;
 }) => {
   const [scrolled, setScrolled] = useState(false);
+  const { searchQuery, setSearchQuery } = useDiscover();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 0);
@@ -73,16 +76,18 @@ const Navbar = ({
             </div>
           </div>
           {/* Actions */}
-          <div className="items-center gap-4 hidden lg:flex">
+          <div className="items-center gap-4 hidden lg:flex relative">
             <input
               type="text"
               placeholder="Search tools..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-semibold text-white transition-colors dark:bg-background-dark dark:text-white focus:outline-none min-w-xs ps-10"
             />
             <Image
               src={SearchTool}
               alt="Search tool"
-              className="absolute top-7 ms-3 w-5 h-5 opacity-75 cursor-pointer"
+              className="absolute top-2 ms-3 w-5 h-5 opacity-75 cursor-pointer"
             />
 
             <a
@@ -91,6 +96,7 @@ const Navbar = ({
             >
               Login
             </a>
+            <Link href="/create-workflow">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -98,6 +104,7 @@ const Navbar = ({
             >
               Submit Stack
             </motion.button>
+            </Link>
           </div>
 
           <div className="flex gap-6 items-center justify-center lg:hidden">

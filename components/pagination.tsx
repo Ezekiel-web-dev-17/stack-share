@@ -2,7 +2,13 @@ import arrowIcon from "../assets/icons/arrow-icon.svg";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-function Pagination({ page, setPage, totalPages }) {
+interface PaginationProps {
+  page: number;
+  setPage: (page: number) => void;
+  totalPages: number;
+}
+
+function Pagination({ page: _page, setPage: _setPage, totalPages }: PaginationProps) {
   return (
     <motion.div
       className="flex items-center justify-center mt-16"

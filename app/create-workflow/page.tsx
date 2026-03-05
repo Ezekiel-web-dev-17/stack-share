@@ -3,7 +3,8 @@
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import InfoIcon from "@/assets/icons/InfoIconSvg.svg";
 import ArrowIcon from "@/assets/icons/arrow-icon.svg";
 import TIpIcon from "@/assets/icons/tipIcon.svg";
@@ -27,7 +28,8 @@ const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
-// Animation variants
+// ─── Animation variants ───────────────────────────────────────────────────────
+
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
   show: (delay = 0) => ({
@@ -71,15 +73,285 @@ const previewVariants = {
   exit: { opacity: 0, x: 24, transition: { duration: 0.2 } },
 } as const;
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface StepData {
+  title: string;
+  description: string;
+  demoText: string;
+}
+
+type FormErrors = Partial<Record<string, string>>;
+
+// ─── Available tools ──────────────────────────────────────────────────────────
+
+const AVAILABLE_TOOLS = [
+  "ChatGPT",
+  "Claude",
+  "Gemini",
+  "Notion",
+  "Zapier",
+  "Make",
+  "Airtable",
+  "Slack",
+  "Trello",
+  "GitHub",
+  "Figma",
+  "Canva",
+  "Midjourney",
+  "Perplexity",
+  "Cursor",
+  "VS Code",
+  "Google Sheets",
+  "Typeform",
+  "Loom",
+  "HubSpot",
+  "Webflow",
+  "Google Analytics 4",
+  "Google Tag Manager",
+  "Google Ads",
+  "Meta Ads Manager",
+  "Looker Studio",
+  "Google Scholar",
+  "Semantic Scholar",
+  "Zotero"
+];
+
+const PROFESSIONAL_ROLES = [
+  "Developer",
+  "Designer",
+  "Marketer",
+  "Product Manager",
+  "Data Analyst",
+  "Content Creator",
+  "Operations",
+  "Researcher",
+  "Video Editor",
+  "Sales",
+  "Other",
+];
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function CreateWorkflow() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const router = useRouter();
+
+  // Basic fields
+  const [title, setTitle] = useState("");
+  const [role, setRole] = useState("");
+  
+  // API Models
+  const [apiTools, setApiTools] = useState<{name: string, image: string | null}[]>([]);
+  
+  // Fetch tools from API
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    fetch(`/api/tools`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load tools");
+        return res.json();
+      })
+      .then((data) => {
+        if (data && data.data) {
+          setApiTools(data.data);
+        }
+      })
+      .catch((err) => console.error("[tools]", err));
+  }, []);
+  const [setupTime, setSetupTime] = useState("");
+  const [description, setDescription] = useState("");
+  const [insight, setInsight] = useState("");
+
+  // Tools
+  const [selectedToolsStack, setSelectedToolsStack] = useState<string[]>([]);
+
+  // Steps
+  const [stepData, setStepData] = useState<StepData[]>([
+    { title: "", description: "", demoText: "" },
+  ]);
+
+  // File upload
+  const [outcomeFile, setOutcomeFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // UI state
   const [rotate, setRotate] = useState(false);
-  const [steps, setSteps] = useState<number>(1);
-  const [preview, setPreview] = useState<boolean>(false);
-  const [outcomeFile, setOutcomeFile] = useState<string>("");
+  const [preview, setPreview] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  // ─── Derived values ─────────────────────────────────────────────────────────
+
+  const filledCount = [
+    title.trim(),
+    role,
+    setupTime.trim(),
+    description.trim(),
+    selectedToolsStack.length > 0 ? "ok" : "",
+    stepData.some((s) => s.title.trim() && s.description.trim()) ? "ok" : "",
+    insight.trim(),
+    outcomeFile ? "ok" : "",
+  ].filter(Boolean).length;
+
+  const currentStep = Math.max(1, Math.round((filledCount / 8) * 5));
+
+  // ─── Handlers ───────────────────────────────────────────────────────────────
+
+  const addTool = useCallback(
+    (tool: string) => {
+      if (tool && !selectedToolsStack.includes(tool)) {
+        setSelectedToolsStack((prev) => [...prev, tool]);
+        setErrors((prev) => ({ ...prev, toolStack: undefined }));
+      }
+    },
+    [selectedToolsStack]
+  );
+
+  const removeTool = useCallback((tool: string) => {
+    setSelectedToolsStack((prev) => prev.filter((t) => t !== tool));
+  }, []);
+
+  const updateStep = useCallback(
+    (index: number, field: keyof StepData, value: string) => {
+      setStepData((prev) => {
+        const next = [...prev];
+        next[index] = { ...next[index], [field]: value };
+        return next;
+      });
+      setErrors((prev) => ({ ...prev, steps: undefined }));
+    },
+    []
+  );
+
+  const addStep = useCallback(() => {
+    setStepData((prev) => [...prev, { title: "", description: "", demoText: "" }]);
+  }, []);
+
+  const removeStep = useCallback((index: number) => {
+    setStepData((prev) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
+  }, []);
+
+  // ─── Validation ──────────────────────────────────────────────────────────────
+
+  function validate(): FormErrors {
+    const errs: FormErrors = {};
+    if (!title.trim()) errs.title = "Title is required";
+    if (!role) errs.role = "Role is required";
+    if (!setupTime.trim()) errs.setupTime = "Setup time is required";
+    if (!description.trim()) errs.description = "Primary goal is required";
+    if (selectedToolsStack.length === 0)
+      errs.toolStack = "Add at least one tool";
+    if (!stepData.some((s) => s.title.trim() && s.description.trim()))
+      errs.steps = "At least one step with a title and description is required";
+    if (!insight.trim()) errs.insight = "Insight is required";
+    return errs;
+  }
+
+  // ─── Submission ──────────────────────────────────────────────────────────────
+
+  async function handleSubmit(isDraft: boolean) {
+    setSubmitError(null);
+
+    if (!isDraft) {
+      const errs = validate();
+      if (Object.keys(errs).length > 0) {
+        setErrors(errs);
+        // Scroll to first error
+        const firstEl = document.querySelector("[data-error]");
+        firstEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+    } else {
+      // Draft only requires title
+      if (!title.trim()) {
+        setErrors({ title: "Title is required even for drafts" });
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+    setErrors({});
+
+    try {
+      const token =
+        // typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        process.env.NEXT_PUBLIC_ACCESS_TOKEN;
+
+      const formData = new FormData();
+      formData.append("title", title.trim());
+      formData.append("isDraft", String(isDraft));
+
+      if (!isDraft) {
+        formData.append("role", role);
+        formData.append("setupTime", setupTime.trim());
+        formData.append("description", description.trim());
+        formData.append("insight", insight.trim());
+        formData.append("toolStack", JSON.stringify(selectedToolsStack));
+        const cleanSteps = stepData
+          .filter((s) => s.title.trim() && s.description.trim())
+          .map(({ title: t, description: d, demoText }) => ({
+            title: t.trim(),
+            description: d.trim(),
+            ...(demoText.trim() ? { demoText: demoText.trim() } : {}),
+          }));
+        formData.append("steps", JSON.stringify(cleanSteps));
+      }
+
+      if (outcomeFile) {
+        formData.append("file", outcomeFile);
+      }
+
+      const res = await fetch("/api/workflows", {
+        method: "POST",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+
+      console.log(res);
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        const msg =
+          data?.message ??
+          (data?.errors
+            ? Object.values(data.errors as Record<string, string[]>)
+                .flat()
+                .join(", ")
+            : "Something went wrong");
+        setSubmitError(msg);
+        return;
+      }
+
+      setSubmitSuccess(true);
+      setTimeout(() => router.push("/explore"), 1500);
+    } catch {
+      setSubmitError("Network error — please check your connection and try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
+
+  const availableToolOptions = apiTools
+    .map(t => t.name)
+    .filter((t) => !selectedToolsStack.includes(t));
 
   return (
-    <div className={`h-screen bg-background ${spaceGrotesk.variable}`}>
+    <div className={`min-h-screen bg-background ${spaceGrotesk.variable}`}>
       <Navbar />
       <div className="flex gap-10 py-8 px-16 w-full lg:flex-row flex-col">
         <main className="flex flex-col gap-8 w-full">
@@ -110,7 +382,7 @@ export default function CreateWorkflow() {
             <div className="flex justify-between items-center">
               <p className="font-medium text-sm">Creation Progress</p>
               <p className="text-sm font-bold text-[#0D93F2]">
-                Step {currentStep} of 5: The Mission
+                Step {currentStep} of 5
               </p>
             </div>
             <input
@@ -119,13 +391,41 @@ export default function CreateWorkflow() {
               min="0"
               max="5"
               value={currentStep}
-              onChange={(e) => setCurrentStep(Number(e.target.value))}
+              readOnly
             />
           </motion.section>
 
+          {/* Success / Error banners */}
+          <AnimatePresence>
+            {submitSuccess && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="px-4 py-3 bg-green-500/20 border border-green-500/40 rounded-lg text-green-400 text-sm font-medium"
+              >
+                ✓ Workflow created successfully! Redirecting…
+              </motion.div>
+            )}
+            {submitError && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="px-4 py-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-400 text-sm font-medium"
+              >
+                {submitError}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Form */}
-          <form action="POST" className="flex flex-col gap-10 pt-2">
-            {/* The Basics */}
+          <form
+            onSubmit={(e) => e.preventDefault()}
+            className="flex flex-col gap-10 pt-2"
+            noValidate
+          >
+            {/* ── The Basics ── */}
             <motion.section
               className="flex flex-col gap-6"
               variants={sectionVariants}
@@ -137,12 +437,10 @@ export default function CreateWorkflow() {
                 <Image src={InfoIcon} alt="info icon" />
                 The Basics
               </h2>
-              <div className="flex flex-col lg:flex-row justify-between items-center lg:gap-24 gap-4">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:gap-24 gap-4">
+                {/* Title */}
                 <div className="flex flex-col items-start gap-2 w-full">
-                  <label
-                    htmlFor="workflow-title"
-                    className="font-medium text-sm"
-                  >
+                  <label htmlFor="workflow-title" className="font-medium text-sm">
                     Workflow Title
                   </label>
                   <input
@@ -150,14 +448,26 @@ export default function CreateWorkflow() {
                     id="workflow-title"
                     name="workflow-title"
                     placeholder="e.g. Automated Content Research"
-                    className="px-4 pb-3.5 pt-3.25 bg-[#182934] border border-[#315168] rounded-lg w-full focus:outline-0 focus:border-[#0D93F2]/60 transition-colors"
+                    value={title}
+                    onChange={(e) => {
+                      setTitle(e.target.value);
+                      setErrors((prev) => ({ ...prev, title: undefined }));
+                    }}
+                    data-error={errors.title ? true : undefined}
+                    className={`px-4 pb-3.5 pt-3.25 bg-[#182934] border rounded-lg w-full focus:outline-0 transition-colors ${
+                      errors.title
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-[#315168] focus:border-[#0D93F2]/60"
+                    }`}
                   />
+                  {errors.title && (
+                    <p className="text-red-400 text-xs">{errors.title}</p>
+                  )}
                 </div>
+
+                {/* Role */}
                 <div className="flex flex-col gap-2 items-start w-full">
-                  <label
-                    htmlFor="professional-role"
-                    className="font-medium text-sm"
-                  >
+                  <label htmlFor="professional-role" className="font-medium text-sm">
                     Professional Role
                   </label>
                   <div
@@ -167,13 +477,24 @@ export default function CreateWorkflow() {
                     <select
                       name="professional-role"
                       id="professional-role"
-                      className="appearance-none px-4 pb-3.5 pt-3.25 bg-[#182934] border border-[#315168] rounded-lg w-full pr-10 focus:outline-0 focus:border-[#0D93F2]/60 transition-colors"
+                      value={role}
+                      onChange={(e) => {
+                        setRole(e.target.value);
+                        setErrors((prev) => ({ ...prev, role: undefined }));
+                      }}
+                      data-error={errors.role ? true : undefined}
+                      className={`appearance-none px-4 pb-3.5 pt-3.25 bg-[#182934] border rounded-lg w-full pr-10 focus:outline-0 transition-colors ${
+                        errors.role
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-[#315168] focus:border-[#0D93F2]/60"
+                      }`}
                     >
                       <option value="">Select professional role</option>
-                      <option value="developer">Developer</option>
-                      <option value="designer">Designer</option>
-                      <option value="marketer">Marketer</option>
-                      <option value="other">Other</option>
+                      {PROFESSIONAL_ROLES.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
                     </select>
                     <Image
                       src={ArrowIcon}
@@ -181,11 +502,40 @@ export default function CreateWorkflow() {
                       className={`absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer transition-transform duration-300 ${rotate ? "rotate-180" : ""}`}
                     />
                   </div>
+                  {errors.role && (
+                    <p className="text-red-400 text-xs">{errors.role}</p>
+                  )}
+                </div>
+
+                {/* Setup Time */}
+                <div className="flex flex-col items-start gap-2 w-full">
+                  <label htmlFor="setupTime" className="font-medium text-sm">
+                    Estimated Setup Time
+                  </label>
+                  <input
+                    type="text"
+                    id="setupTime"
+                    placeholder="e.g. 15 mins"
+                    value={setupTime}
+                    onChange={(e) => {
+                      setSetupTime(e.target.value);
+                      setErrors((prev) => ({ ...prev, setupTime: undefined }));
+                    }}
+                    data-error={errors.setupTime ? true : undefined}
+                    className={`px-4 py-3.5 bg-[#182934] border rounded-lg w-full focus:outline-0 transition-colors ${
+                      errors.setupTime
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-[#315168] focus:border-[#0D93F2]/60"
+                    }`}
+                  />
+                  {errors.setupTime && (
+                    <p className="text-red-400 text-xs">{errors.setupTime}</p>
+                  )}
                 </div>
               </div>
             </motion.section>
 
-            {/* The Mission */}
+            {/* ── The Mission ── */}
             <motion.section
               className="flex flex-col gap-6"
               variants={sectionVariants}
@@ -205,12 +555,25 @@ export default function CreateWorkflow() {
                   name="primary-goal"
                   id="primary-goal"
                   placeholder="Describe the outcome of this workflow..."
-                  className="px-4 py-3.5 bg-[#182934] border border-[#315168] rounded-lg w-full focus:outline-0 focus:border-[#0D93F2]/60 transition-colors max-h-24"
-                ></textarea>
+                  value={description}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    setErrors((prev) => ({ ...prev, description: undefined }));
+                  }}
+                  data-error={errors.description ? true : undefined}
+                  className={`px-4 py-3.5 bg-[#182934] border rounded-lg w-full focus:outline-0 transition-colors max-h-24 ${
+                    errors.description
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-[#315168] focus:border-[#0D93F2]/60"
+                  }`}
+                />
+                {errors.description && (
+                  <p className="text-red-400 text-xs">{errors.description}</p>
+                )}
               </div>
             </motion.section>
 
-            {/* The Tools Stack */}
+            {/* ── The Tools Stack ── */}
             <motion.section
               className="flex flex-col gap-6"
               variants={sectionVariants}
@@ -228,44 +591,77 @@ export default function CreateWorkflow() {
                   alt="search icon"
                   className="absolute left-5 top-5 cursor-pointer w-4.5 h-4.5"
                 />
-                <input
-                  type="search"
+
+                <select
+                  name="tools"
                   id="tool-search"
-                  placeholder="Search and add tools (e.g. ChatGPT, Notion, Zapier...)"
-                  className="pl-12 pr-4 py-3.5 bg-[#182934] border border-[#315168] rounded-lg w-full focus:outline-0 focus:border-[#0D93F2]/60 transition-colors"
-                />
-                <div
-                  className="flex gap-2"
-                  role="list"
-                  aria-label="Selected tools"
+                  data-error={errors.toolStack ? true : undefined}
+                  className={`appearance-none px-4 pb-3.5 pt-3.25 bg-[#182934] border pr-10 transition-colors pl-12 py-3.5 rounded-lg w-full focus:outline-0 text-[#6B7280] cursor-pointer ${
+                    errors.toolStack
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-[#315168] focus:border-[#0D93F2]/60"
+                  }`}
+                  value=""
+                  onChange={(e) => addTool(e.target.value)}
                 >
-                  {["ChatGPT", "Calude 3.5", "Zapier"].map((tool) => (
-                    <motion.button
-                      key={tool}
-                      type="button"
-                      role="listitem"
-                      className="flex gap-2 px-3 py-1.5 bg-[#0D93F2]/20 border border-[#0D93F2]/40 rounded-full items-center justify-center"
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.96 }}
-                    >
-                      <Image
-                        src={InsightIcon}
-                        alt="insight icon"
-                        className="w-4 h-4 hidden lg:block"
-                      />
-                      <span className="font-normal text-sm">{tool}</span>
-                      <Image
-                        src={CloseIcon}
-                        alt={`Remove ${tool}`}
-                        className="w-3 h-3 cursor-pointer"
-                      />
-                    </motion.button>
+                  <option value="" disabled>
+                    Search and add tools (e.g. ChatGPT, Notion, Zapier...)
+                  </option>
+                  {availableToolOptions.toSorted((a, b) => a.localeCompare(b)).map((tool) => (
+                    <option key={tool} value={tool}>
+                      {tool}
+                    </option>
                   ))}
-                </div>
+                </select>
+
+                {errors.toolStack && (
+                  <p className="text-red-400 text-xs -mt-2">{errors.toolStack}</p>
+                )}
+
+                {selectedToolsStack.length > 0 && (
+                  <div
+                    className="flex flex-wrap gap-2"
+                    role="list"
+                    aria-label="Selected tools"
+                  >
+                    {selectedToolsStack.map((tool) => (
+                      <motion.div
+                        key={tool}
+                        role="listitem"
+                        className="flex gap-2 px-3 py-1.5 bg-[#0D93F2]/20 border border-[#0D93F2]/40 rounded-full items-center justify-center"
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.85 }}
+                        layout
+                      >
+                        <Image
+                          src={InsightIcon}
+                          alt=""
+                          aria-hidden="true"
+                          className="w-4 h-4 hidden lg:block"
+                        />
+                        <span className="font-normal text-sm">{tool}</span>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${tool}`}
+                          onClick={() => removeTool(tool)}
+                          className="cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+                        >
+                          <Image
+                            src={CloseIcon}
+                            alt=""
+                            aria-hidden="true"
+                            className="w-3 h-3"
+                          />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.section>
 
-            {/* The Step by Step Workflow */}
+            {/* ── Step by Step Workflow ── */}
             <motion.section
               className="flex flex-col gap-6"
               variants={sectionVariants}
@@ -273,7 +669,7 @@ export default function CreateWorkflow() {
               whileInView="show"
               viewport={{ once: true, margin: "-40px" }}
             >
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-[#0D93F2] flex items-center gap-2">
                   <Image src={StepByStepIcon} alt="Step by Step icon" />
                   The Step by Step Workflow
@@ -281,7 +677,7 @@ export default function CreateWorkflow() {
                 <motion.button
                   type="button"
                   className="flex gap-1 cursor-pointer items-center justify-center"
-                  onClick={() => setSteps(steps + 1)}
+                  onClick={addStep}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -292,6 +688,10 @@ export default function CreateWorkflow() {
                 </motion.button>
               </div>
 
+              {errors.steps && (
+                <p className="text-red-400 text-xs -mt-4">{errors.steps}</p>
+              )}
+
               <motion.ol
                 className="flex flex-col gap-4 list-none p-0 m-0"
                 variants={stepListVariants}
@@ -299,7 +699,7 @@ export default function CreateWorkflow() {
                 animate="show"
               >
                 <AnimatePresence>
-                  {Array.from({ length: steps }).map((_, index) => (
+                  {stepData.map((step, index) => (
                     <motion.li
                       key={index}
                       variants={stepCardVariants}
@@ -308,7 +708,9 @@ export default function CreateWorkflow() {
                       exit="exit"
                       layout
                     >
-                      <fieldset className="border border-[#315168] p-6 ps-10 bg-[#182934] rounded-xl relative w-full hover:border-[#0D93F2]/40 transition-colors">
+                      <fieldset
+                        className="border border-[#315168] p-6 ps-10 bg-[#182934] rounded-xl relative w-full hover:border-[#0D93F2]/40 transition-colors"
+                      >
                         <legend className="sr-only">Step {index + 1}</legend>
                         <div className="bg-[#0D93F2] p-0.5 px-2 text-white font-bold text-sm rounded-full w-fit absolute left-0 top-4">
                           {index + 1}
@@ -317,9 +719,7 @@ export default function CreateWorkflow() {
                           type="button"
                           className="absolute right-2 top-2 cursor-pointer"
                           aria-label={`Delete step ${index + 1}`}
-                          onClick={() => {
-                            steps > 1 ? setSteps(steps - 1) : setSteps(1);
-                          }}
+                          onClick={() => removeStep(index)}
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                         >
@@ -333,6 +733,10 @@ export default function CreateWorkflow() {
                             <input
                               type="text"
                               placeholder={`${index === 0 ? "First" : "Next"} Step Title`}
+                              value={step.title}
+                              onChange={(e) =>
+                                updateStep(index, "title", e.target.value)
+                              }
                               className="px-3 py-1.5 bg-[#182934] border border-[#315168] rounded-lg w-full focus:outline-0 focus:border-[#0D93F2]/60 transition-colors"
                             />
                           </label>
@@ -342,6 +746,10 @@ export default function CreateWorkflow() {
                             </span>
                             <textarea
                               placeholder="Describe what happens in this step..."
+                              value={step.description}
+                              onChange={(e) =>
+                                updateStep(index, "description", e.target.value)
+                              }
                               className="px-3 py-1.5 bg-[#182934] border border-[#315168] rounded-lg w-full focus:outline-0 focus:border-[#0D93F2]/60 transition-colors text-white"
                             />
                           </label>
@@ -351,6 +759,10 @@ export default function CreateWorkflow() {
                             </span>
                             <textarea
                               placeholder="e.g. 'Summarize this article in 3 bullet points for a non-technical audience'"
+                              value={step.demoText}
+                              onChange={(e) =>
+                                updateStep(index, "demoText", e.target.value)
+                              }
                               className="px-3 py-1.5 bg-[#182934] border border-[#315168] rounded-lg w-full focus:outline-0 focus:border-[#0D93F2]/60 transition-colors text-white"
                             />
                           </label>
@@ -362,7 +774,7 @@ export default function CreateWorkflow() {
               </motion.ol>
             </motion.section>
 
-            {/* The Unique Insight */}
+            {/* ── The Unique Insight ── */}
             <motion.section
               className="flex flex-col gap-6"
               variants={sectionVariants}
@@ -388,12 +800,25 @@ export default function CreateWorkflow() {
                   name="stopped"
                   id="stopped"
                   placeholder="What tool or manual process did this workflow replace?"
-                  className="px-4 py-3 border border-[#0D93F2]/30 bg-[#101B22] rounded-lg w-full focus:outline-0 focus:border-[#0D93F2]/60 transition-colors max-h-18.5 placeholder:text-[#6B7280]"
-                ></textarea>
+                  value={insight}
+                  onChange={(e) => {
+                    setInsight(e.target.value);
+                    setErrors((prev) => ({ ...prev, insight: undefined }));
+                  }}
+                  data-error={errors.insight ? true : undefined}
+                  className={`px-4 py-3 border bg-[#101B22] rounded-lg w-full focus:outline-0 transition-colors max-h-18.5 placeholder:text-[#6B7280] ${
+                    errors.insight
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-[#0D93F2]/30 focus:border-[#0D93F2]/60"
+                  }`}
+                />
+                {errors.insight && (
+                  <p className="text-red-400 text-xs">{errors.insight}</p>
+                )}
               </div>
             </motion.section>
 
-            {/* Outcome File */}
+            {/* ── Outcome File ── */}
             <motion.section
               className="flex flex-col gap-3"
               variants={sectionVariants}
@@ -433,54 +858,87 @@ export default function CreateWorkflow() {
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
-                <span className="text-sm text-[#90B2CB] group-hover:text-white transition-colors">
-                  Upload a sample output, screenshot or result file
+                <span className="text-sm text-[#90B2CB] group-hover:text-white transition-colors truncate">
+                  {outcomeFile
+                    ? outcomeFile.name
+                    : "Upload a sample output, screenshot or result file"}
                 </span>
+                {outcomeFile && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOutcomeFile(null);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                    className="ml-auto shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+                    aria-label="Remove file"
+                  >
+                    <Image src={CloseIcon} alt="" className="w-3 h-3" />
+                  </button>
+                )}
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*,.pdf,.txt,.csv,.json,.md"
                   className="hidden"
-                  value={outcomeFile}
-                  onChange={(e) => setOutcomeFile(e.target.value)}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    setOutcomeFile(file);
+                  }}
                 />
               </motion.label>
             </motion.section>
 
-            {/* Submit & Preview */}
+            {/* ── Submit & Preview ── */}
             <motion.div
-              className="flex gap-4 w-full pt-10"
+              className="flex flex-col gap-3 w-full pt-10"
               variants={fadeUp}
               custom={0}
               initial="hidden"
               whileInView="show"
               viewport={{ once: true }}
             >
-              <motion.button
-                type="submit"
-                className="w-full bg-[#0D93F2] text-white py-4 font-bold text-base rounded-xl cursor-pointer border-2 border-[#0D93F2] transition-colors hover:bg-transparent hover:text-[#0D93F2]"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Publish Workflow
-              </motion.button>
-              <motion.button
-                type="button"
-                className="px-8 py-3.5 text-nowrap rounded-xl bg-[#182934] border border-[#315168] font-bold text-white text-base cursor-pointer hover:bg-[#0D93F2] hover:border-[#0D93F2] transition-colors"
-                onClick={() => setPreview(!preview)}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {preview ? "Hide Preview" : "Preview Full Page"}
-              </motion.button>
+              <div className="flex gap-4 w-full">
+                <motion.button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => handleSubmit(false)}
+                  className="w-full bg-[#0D93F2] text-white py-4 font-bold text-base rounded-xl cursor-pointer border-2 border-[#0D93F2] transition-colors hover:bg-transparent hover:text-[#0D93F2] disabled:opacity-60 disabled:cursor-not-allowed text-nowrap"
+                  whileHover={{ scale: isSubmitting ? 1 : 1.01 }}
+                  whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+                >
+                  {isSubmitting ? "Publishing…" : "Publish Workflow"}
+                </motion.button>
+                <motion.button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => handleSubmit(true)}
+                  className="px-8 py-3.5 text-nowrap rounded-xl bg-[#182934] border border-[#315168] font-bold text-white text-base cursor-pointer hover:bg-[#1e3545] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  whileHover={{ scale: isSubmitting ? 1 : 1.01 }}
+                  whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+                >
+                  {isSubmitting ? "Saving…" : "Save Draft"}
+                </motion.button>
+                <motion.button
+                  type="button"
+                  className="px-8 py-3.5 text-nowrap rounded-xl bg-[#182934] border border-[#315168] font-bold text-white text-base cursor-pointer hover:bg-[#0D93F2] hover:border-[#0D93F2] transition-colors"
+                  onClick={() => setPreview(!preview)}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {preview ? "Hide Preview" : "Preview"}
+                </motion.button>
+              </div>
             </motion.div>
           </form>
         </main>
 
-        {/* Live Preview Panel */}
+        {/* ── Live Preview Panel ── */}
         <AnimatePresence>
           {preview && (
             <motion.aside
-              className="flex flex-col gap-6 min-w-1/4"
+              className="flex flex-col gap-6 lg:w-1/4 "
               variants={previewVariants}
               initial="hidden"
               animate="show"
@@ -513,61 +971,88 @@ export default function CreateWorkflow() {
                 </div>
                 <div className="px-6 py-5.75 flex flex-col gap-4 bg-[#182934] rounded-b-2xl border border-[#315168] items-start">
                   <div className="flex flex-col gap-1.75">
-                    <span className="text-[#0D93F2] text-[10px] bg-[#0D93F2]/10 px-2 py-px font-bold rounded-sm w-fit">
-                      {"PRODUCT MANAGER"}
-                    </span>
+                    {role && (
+                      <span className="text-[#0D93F2] text-[10px] bg-[#0D93F2]/10 px-2 py-px font-bold rounded-sm w-fit uppercase">
+                        {role}
+                      </span>
+                    )}
                     <h2 className="text-xl font-bold">
-                      Automated Content Research
+                      {title || "Workflow Title"}
                     </h2>
                   </div>
                   <p className="text-sm text-[#90B2CB] max-w-87.5">
-                    Describe the outcome of this workflow... use the &apos;Deep
-                    Analysis&apos; prompt in Claude to break down and analyze
-                    the content.
+                    {description || "Describe the outcome of this workflow..."}
                   </p>
 
                   {/* Tools */}
-                  <div className="py-2 px-0 flex items-center gap-2 justify-center">
-                    {Array.from({ length: 3 }).map((_, index) => (
-                      <div key={index} className="p-2 bg-[#1E293B] rounded-lg">
-                        <Image src={InsightIcon} alt="Tool icon" />
-                      </div>
-                    ))}
-                    <p className="text-sm text-[#90B2CB]">+2 more</p>
-                  </div>
+                  {selectedToolsStack.length > 0 && (
+                    <div className="py-2 px-0 flex flex-wrap items-center gap-2">
+                      {selectedToolsStack.slice(0, 3).map((toolName, index) => {
+                        const matchedTool = apiTools.find(t => t.name === toolName);
+                        return (
+                        <div key={index} className="p-2 bg-[#1E293B] rounded-lg place-content-center">
+                          {matchedTool?.image ? (
+                            <Image src={matchedTool.image} width={15} height={15} alt={toolName} className="max-w-4 max-h-4" />
+                          ) : (
+                            <Image src={InsightIcon} alt="Tool icon" />
+                          )}
+                        </div>
+                      )})}
+                      {selectedToolsStack.length > 3 && (
+                        <p className="text-sm text-[#90B2CB]">
+                          +{selectedToolsStack.length - 3} more
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Process Preview */}
-                  <div className="pt-4 flex flex-col gap-3 w-full">
-                    <div className="flex justify-between w-full">
-                      <p className="font-medium text-xs text-[#90B2CB]">
-                        PROCESS PREVIEW
-                      </p>
-                      <p className="text-xs text-[#90B2CB]">3 Steps</p>
+                  {stepData.some((s) => s.title) && (
+                    <div className="pt-4 flex flex-col gap-3 w-full">
+                      <div className="flex justify-between w-full">
+                        <p className="font-medium text-xs text-[#90B2CB]">
+                          PROCESS PREVIEW
+                        </p>
+                        <p className="text-xs text-[#90B2CB]">
+                          {stepData.filter((s) => s.title).length} Step
+                          {stepData.filter((s) => s.title).length !== 1
+                            ? "s"
+                            : ""}
+                        </p>
+                      </div>
+                      <ol className="flex flex-col gap-3 list-none p-0 m-0">
+                        {stepData
+                          .filter((s) => s.title)
+                          .map((s, index) => (
+                            <li
+                              key={index}
+                              className="flex gap-3 items-center"
+                            >
+                              <div className="w-6 h-6 shrink-0 place-content-center bg-[#0D93F2]/10 rounded-full px-2">
+                                <p className="font-bold text-xs text-[#0D93F2]">
+                                  {index + 1}
+                                </p>
+                              </div>
+                              <p className="text-xs text-white/80 truncate">
+                                {s.title}
+                              </p>
+                            </li>
+                          ))}
+                      </ol>
                     </div>
-                    <ol className="flex flex-col gap-3 list-none p-0 m-0">
-                      {Array.from({ length: 3 }).map((_, index) => (
-                        <li key={index} className="flex gap-3 items-center">
-                          <div className="w-6 h-6 place-content-center bg-[#0D93F2]/10 rounded-full px-2">
-                            <p className="font-bold text-xs text-[#0D93F2]">
-                              {index + 1}
-                            </p>
-                          </div>
-                          <div className="w-full py-1.5 bg-[#315168] rounded-lg h-fit"></div>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
+                  )}
 
                   {/* Insight Preview */}
-                  <div className="bg-[#101B22]/50 p-3 flex flex-col gap-1 w-full">
-                    <p className="font-medium text-xs text-[#0D93F2]">
-                      INSIGHT PREVIEW
-                    </p>
-                    <p className="text-sm text-[#90B2CB]">
-                      &quot;I stopped using manual Google Sheets tracking for
-                      initial drafts...&quot;
-                    </p>
-                  </div>
+                  {insight && (
+                    <div className="bg-[#101B22]/50 p-3 flex flex-col gap-1 w-full">
+                      <p className="font-medium text-xs text-[#0D93F2]">
+                        INSIGHT PREVIEW
+                      </p>
+                      <p className="text-sm text-[#90B2CB] line-clamp-3">
+                        &quot;{insight}&quot;
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 

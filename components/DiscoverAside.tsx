@@ -6,6 +6,8 @@ import SearchTool from "../assets/icons/SearchTool.svg";
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
+import { useDiscover } from "./DiscoverContext";
+
 type Role = { name: string; total: number; checked: boolean };
 type Task = { name: string; checked: boolean };
 type Price = { name: string; checked: boolean };
@@ -49,6 +51,8 @@ const itemVariants = {
 } as const;
 
 export default function DiscoverAside() {
+  const { searchQuery, setSearchQuery, setFilters } = useDiscover();
+
   const [activePrice, setActivePrice] = useState(true);
   const [activeTask, setActiveTask] = useState(true);
   const [activeRole, setActiveRole] = useState(true);
@@ -56,6 +60,14 @@ export default function DiscoverAside() {
   const [tasks, setTasks] = useState<Task[]>(tasksArr);
   const [roles, setRoles] = useState<Role[]>(rolesArr);
   const [prices, setPrices] = useState<Price[]>(pricesArr);
+
+  useEffect(() => {
+    setFilters({
+      roles: roles.filter((r) => r.checked).map((r) => r.name),
+      tasks: tasks.filter((t) => t.checked).map((t) => t.name),
+      prices: prices.filter((p) => p.checked).map((p) => p.name),
+    });
+  }, [roles, tasks, prices, setFilters]);
 
   const resetAll = () => {
     setActivePrice(true);
@@ -98,9 +110,11 @@ export default function DiscoverAside() {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
     >
-      <form className="p-4 pb-2 lg:hidden">
+      <form className="p-4 pb-2 lg:hidden" onSubmit={(e) => e.preventDefault()}>
         <input
           type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search tools..."
           className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-semibold text-white transition-colors dark:bg-background-dark dark:text-white focus:outline-none w-full ps-10"
         />
