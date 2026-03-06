@@ -161,6 +161,8 @@ export default function Explore() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [hasNext, setHasNext] = useState<boolean>(false)
+  const [hasPrevious, setHasPrevious] = useState<boolean>(false)
 
   // Stable headers — rebuilt only when env vars change (they don't at runtime, but
   // useMemo keeps the object reference stable so it can safely be in dep arrays).
@@ -264,12 +266,16 @@ export default function Explore() {
           if (!res.ok) throw new Error(`Server error ${res.status}`);
           return res.json() as Promise<{
             data: Workflow[];
-            meta: { totalPages: number };
+            meta: { totalPages: number, hasNext:boolean, hasPrev:boolean, limit: number, page: number, total: number };
           }>;
         })
         .then(({ data, meta }) => {
           setWorkflows(data || []);
           setTotalPages(meta?.totalPages || 1);
+          setHasNext(meta?.hasNext || false);
+          setHasPrevious(meta?.hasPrev || false);
+          alert(`hasNext: ${meta.hasNext}`)
+          alert(`hasPrev: ${meta.hasPrev}`)
         })
         .catch((err) => {
           if ((err as Error).name === "AbortError") return; // stale request — ignore
@@ -567,7 +573,7 @@ export default function Explore() {
           )}
         </div>
 
-        <Pagination page={page} setPage={setPage} totalPages={totalPages} />
+        <Pagination page={page} setPage={setPage} totalPages={totalPages} hasNext={workflows.hasNext} hasPrevious={workflows.hasPrevious}/>
       </motion.main>
 
       <Footer />

@@ -6,9 +6,11 @@ interface PaginationProps {
   page: number;
   setPage: (page: number) => void;
   totalPages: number;
+  hasNext: number;
+  hasPrevious: number
 }
 
-function Pagination({ page: _page, setPage: _setPage, totalPages }: PaginationProps) {
+function Pagination({ page: _page, setPage: _setPage, totalPages, hasPrevious, hasNext }: PaginationProps) {
   return (
     <motion.div
       className="flex items-center justify-center mt-16"
@@ -21,6 +23,7 @@ function Pagination({ page: _page, setPage: _setPage, totalPages }: PaginationPr
           className="border-2 border-[#223949] bg-transparent text-[#0D93F2] text-base font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed p-2 rounded-lg"
           whileTap={{ scale: 0.97 }}
           whileHover={{ y: -1 }}
+          disabled={!hasPrevious}
         >
           <Image
             src={arrowIcon}
@@ -45,9 +48,10 @@ function Pagination({ page: _page, setPage: _setPage, totalPages }: PaginationPr
         ))}
 
         <motion.button
-          className="border-2 border-[#223949] rounded-lg bg-transparent text-[#0D93F2] text-base font-medium cursor-pointer p-2"
+          className="border-2 border-[#223949] rounded-lg bg-transparent text-[#0D93F2] text-base font-medium cursor-pointer p-2 disabled:cursor-not-allowed disabled:opacity-50"
           whileTap={{ scale: 0.97 }}
           whileHover={{ y: -1 }}
+          disabled={!hasNext}
         >
           <Image
             src={arrowIcon}

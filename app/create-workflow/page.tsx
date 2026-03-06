@@ -83,40 +83,6 @@ interface StepData {
 
 type FormErrors = Partial<Record<string, string>>;
 
-// ─── Available tools ──────────────────────────────────────────────────────────
-
-const AVAILABLE_TOOLS = [
-  "ChatGPT",
-  "Claude",
-  "Gemini",
-  "Notion",
-  "Zapier",
-  "Make",
-  "Airtable",
-  "Slack",
-  "Trello",
-  "GitHub",
-  "Figma",
-  "Canva",
-  "Midjourney",
-  "Perplexity",
-  "Cursor",
-  "VS Code",
-  "Google Sheets",
-  "Typeform",
-  "Loom",
-  "HubSpot",
-  "Webflow",
-  "Google Analytics 4",
-  "Google Tag Manager",
-  "Google Ads",
-  "Meta Ads Manager",
-  "Looker Studio",
-  "Google Scholar",
-  "Semantic Scholar",
-  "Zotero"
-];
-
 const PROFESSIONAL_ROLES = [
   "Developer",
   "Designer",
@@ -146,7 +112,7 @@ export default function CreateWorkflow() {
   // Fetch tools from API
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    fetch(`/api/tools`, {
+    fetch(`/api/tools?limit=40`, {
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -971,63 +937,81 @@ export default function CreateWorkflow() {
                 </div>
                 <div className="px-6 py-5.75 flex flex-col gap-4 bg-[#182934] rounded-b-2xl border border-[#315168] items-start">
                   <div className="flex flex-col gap-1.75">
-                    {role && (
-                      <span className="text-[#0D93F2] text-[10px] bg-[#0D93F2]/10 px-2 py-px font-bold rounded-sm w-fit uppercase">
-                        {role}
-                      </span>
-                    )}
-                    <h2 className="text-xl font-bold">
-                      {title || "Workflow Title"}
-                    </h2>
+                    <h6 className="text-[#0D93F2] text-[10px] bg-[#0D93F2]/10 px-2 py-px font-bold rounded-sm w-fit">
+                      {(role || "product manager").toUpperCase()}
+                    </h6>
+                    <h4 className="text-xl font-bold">
+                      {title || "Automated Content Research"}
+                    </h4>
                   </div>
                   <p className="text-sm text-[#90B2CB] max-w-87.5">
-                    {description || "Describe the outcome of this workflow..."}
+                    {description ||
+                      "Describe the outcome of this workflow... use the 'Deep Analysis' prompt in Claude to break down and analyze the content."}
                   </p>
 
                   {/* Tools */}
-                  {selectedToolsStack.length > 0 && (
-                    <div className="py-2 px-0 flex flex-wrap items-center gap-2">
-                      {selectedToolsStack.slice(0, 3).map((toolName, index) => {
-                        const matchedTool = apiTools.find(t => t.name === toolName);
-                        return (
-                        <div key={index} className="p-2 bg-[#1E293B] rounded-lg place-content-center">
-                          {matchedTool?.image ? (
-                            <Image src={matchedTool.image} width={15} height={15} alt={toolName} className="max-w-4 max-h-4" />
-                          ) : (
-                            <Image src={InsightIcon} alt="Tool icon" />
-                          )}
-                        </div>
-                      )})}
-                      {selectedToolsStack.length > 3 && (
-                        <p className="text-sm text-[#90B2CB]">
-                          +{selectedToolsStack.length - 3} more
-                        </p>
-                      )}
-                    </div>
-                  )}
+                  <div className="py-2 px-0 flex items-center gap-2 justify-center">
+                    {selectedToolsStack.length > 0 ? (
+                      <>
+                        {selectedToolsStack.slice(0, 3).map((toolName, index) => {
+                          const matchedTool = apiTools.find(
+                            (t) => t.name === toolName
+                          );
+                          return (
+                            <div
+                              key={index}
+                              className="p-2 bg-[#1E293B] rounded-lg place-content-center"
+                            >
+                              {matchedTool?.image ? (
+                                <Image
+                                  src={matchedTool.image}
+                                  width={15}
+                                  height={15}
+                                  alt={toolName}
+                                  className="max-w-4 max-h-4"
+                                />
+                              ) : (
+                                <Image src={InsightIcon} alt="Tool icon" />
+                              )}
+                            </div>
+                          );
+                        })}
+                        {selectedToolsStack.length > 3 && (
+                          <p className="text-sm text-[#90B2CB]">
+                            +{selectedToolsStack.length - 3} more
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {Array.from({ length: 3 }).map((_, index) => (
+                          <div key={index} className="p-2 bg-[#1E293B] rounded-lg">
+                            <Image src={InsightIcon} alt="Tools Icons" />
+                          </div>
+                        ))}
+                        <p className="text-sm text-[#90B2CB]">+2 more</p>
+                      </>
+                    )}
+                  </div>
 
                   {/* Process Preview */}
-                  {stepData.some((s) => s.title) && (
-                    <div className="pt-4 flex flex-col gap-3 w-full">
-                      <div className="flex justify-between w-full">
-                        <p className="font-medium text-xs text-[#90B2CB]">
-                          PROCESS PREVIEW
-                        </p>
-                        <p className="text-xs text-[#90B2CB]">
-                          {stepData.filter((s) => s.title).length} Step
-                          {stepData.filter((s) => s.title).length !== 1
-                            ? "s"
-                            : ""}
-                        </p>
-                      </div>
-                      <ol className="flex flex-col gap-3 list-none p-0 m-0">
-                        {stepData
+                  <div className="pt-4 flex flex-col gap-3 w-full">
+                    <div className="flex justify-between w-full">
+                      <p className="font-medium text-xs text-[#90B2CB]">
+                        PROCESS PREVIEW
+                      </p>
+                      <p className="text-xs text-[#90B2CB]">
+                        {stepData.some((s) => s.title)
+                          ? `${stepData.filter((s) => s.title).length} Step${stepData.filter((s) => s.title).length !== 1 ? "s" : ""}`
+                          : "3 Steps"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      {stepData.some((s) => s.title) ? (
+                        stepData
                           .filter((s) => s.title)
                           .map((s, index) => (
-                            <li
-                              key={index}
-                              className="flex gap-3 items-center"
-                            >
+                            <div key={index} className="flex gap-3 items-center">
                               <div className="w-6 h-6 shrink-0 place-content-center bg-[#0D93F2]/10 rounded-full px-2">
                                 <p className="font-bold text-xs text-[#0D93F2]">
                                   {index + 1}
@@ -1036,23 +1020,33 @@ export default function CreateWorkflow() {
                               <p className="text-xs text-white/80 truncate">
                                 {s.title}
                               </p>
-                            </li>
-                          ))}
-                      </ol>
+                            </div>
+                          ))
+                      ) : (
+                        Array.from({ length: 3 }).map((_, index) => (
+                          <div key={index} className="flex gap-3 items-center">
+                            <div className="w-6 h-6 place-content-center bg-[#0D93F2]/10 rounded-full px-2">
+                              <p className="font-bold text-xs text-[#0D93F2]">
+                                {index + 1}
+                              </p>
+                            </div>
+                            <div className="w-full py-1.5 bg-[#315168] rounded-lg h-fit"></div>
+                          </div>
+                        ))
+                      )}
                     </div>
-                  )}
+                  </div>
 
                   {/* Insight Preview */}
-                  {insight && (
-                    <div className="bg-[#101B22]/50 p-3 flex flex-col gap-1 w-full">
-                      <p className="font-medium text-xs text-[#0D93F2]">
-                        INSIGHT PREVIEW
-                      </p>
-                      <p className="text-sm text-[#90B2CB] line-clamp-3">
-                        &quot;{insight}&quot;
-                      </p>
-                    </div>
-                  )}
+                  <div className="bg-[#101B22]/50 p-3 flex flex-col gap-1 w-full">
+                    <p className="font-medium text-xs text-[#0D93F2]">
+                      INSIGHT PREVIEW
+                    </p>
+                    <p className="text-sm text-[#90B2CB] line-clamp-3">
+                      &quot;{insight ||
+                        "I stopped using manual Google Sheets tracking for initial drafts..."}&quot;
+                    </p>
+                  </div>
                 </div>
               </div>
 
