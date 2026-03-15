@@ -76,7 +76,7 @@ const SORT_BY: string[] = ["Trending", "Newest", "Top Rated"];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatCount(n: number): string {
+export function formatCount(n: number): string {
   if (n > 999_999) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n > 999) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
@@ -274,8 +274,6 @@ export default function Explore() {
           setTotalPages(meta?.totalPages || 1);
           setHasNext(meta?.hasNext || false);
           setHasPrevious(meta?.hasPrev || false);
-          alert(`hasNext: ${meta.hasNext}`)
-          alert(`hasPrev: ${meta.hasPrev}`)
         })
         .catch((err) => {
           if ((err as Error).name === "AbortError") return; // stale request — ignore
@@ -573,7 +571,7 @@ export default function Explore() {
           )}
         </div>
 
-        <Pagination page={page} setPage={setPage} totalPages={totalPages} hasNext={workflows.hasNext} hasPrevious={workflows.hasPrevious}/>
+        <Pagination page={page} setPage={setPage} totalPages={totalPages} hasNext={hasNext} hasPrevious={hasPrevious} />
       </motion.main>
 
       <Footer />

@@ -105,20 +105,21 @@ export default function CreateWorkflow() {
   // Basic fields
   const [title, setTitle] = useState("");
   const [role, setRole] = useState("");
-  
+
   // API Models
-  const [apiTools, setApiTools] = useState<{name: string, image: string | null}[]>([]);
-  
+  const [apiTools, setApiTools] = useState<
+    { name: string; image: string | null }[]
+  >([]);
+
   // Fetch tools from API
   useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    fetch(`/api/tools?limit=40`, {
+    fetch(`/api/tools/names`, {
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     })
       .then((res) => {
+        console.log("Response: ", res);
         if (!res.ok) throw new Error("Failed to load tools");
         return res.json();
       })
@@ -177,7 +178,7 @@ export default function CreateWorkflow() {
         setErrors((prev) => ({ ...prev, toolStack: undefined }));
       }
     },
-    [selectedToolsStack]
+    [selectedToolsStack],
   );
 
   const removeTool = useCallback((tool: string) => {
@@ -193,11 +194,14 @@ export default function CreateWorkflow() {
       });
       setErrors((prev) => ({ ...prev, steps: undefined }));
     },
-    []
+    [],
   );
 
   const addStep = useCallback(() => {
-    setStepData((prev) => [...prev, { title: "", description: "", demoText: "" }]);
+    setStepData((prev) => [
+      ...prev,
+      { title: "", description: "", demoText: "" },
+    ]);
   }, []);
 
   const removeStep = useCallback((index: number) => {
@@ -304,7 +308,9 @@ export default function CreateWorkflow() {
       setSubmitSuccess(true);
       setTimeout(() => router.push("/explore"), 1500);
     } catch {
-      setSubmitError("Network error — please check your connection and try again.");
+      setSubmitError(
+        "Network error — please check your connection and try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -313,7 +319,7 @@ export default function CreateWorkflow() {
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   const availableToolOptions = apiTools
-    .map(t => t.name)
+    .map((t) => t.name)
     .filter((t) => !selectedToolsStack.includes(t));
 
   return (
@@ -406,7 +412,10 @@ export default function CreateWorkflow() {
               <div className="flex flex-col lg:flex-row justify-between items-start lg:gap-24 gap-4">
                 {/* Title */}
                 <div className="flex flex-col items-start gap-2 w-full">
-                  <label htmlFor="workflow-title" className="font-medium text-sm">
+                  <label
+                    htmlFor="workflow-title"
+                    className="font-medium text-sm"
+                  >
                     Workflow Title
                   </label>
                   <input
@@ -433,7 +442,10 @@ export default function CreateWorkflow() {
 
                 {/* Role */}
                 <div className="flex flex-col gap-2 items-start w-full">
-                  <label htmlFor="professional-role" className="font-medium text-sm">
+                  <label
+                    htmlFor="professional-role"
+                    className="font-medium text-sm"
+                  >
                     Professional Role
                   </label>
                   <div
@@ -573,15 +585,19 @@ export default function CreateWorkflow() {
                   <option value="" disabled>
                     Search and add tools (e.g. ChatGPT, Notion, Zapier...)
                   </option>
-                  {availableToolOptions.toSorted((a, b) => a.localeCompare(b)).map((tool) => (
-                    <option key={tool} value={tool}>
-                      {tool}
-                    </option>
-                  ))}
+                  {availableToolOptions
+                    .toSorted((a, b) => a.localeCompare(b))
+                    .map((tool) => (
+                      <option key={tool} value={tool}>
+                        {tool}
+                      </option>
+                    ))}
                 </select>
 
                 {errors.toolStack && (
-                  <p className="text-red-400 text-xs -mt-2">{errors.toolStack}</p>
+                  <p className="text-red-400 text-xs -mt-2">
+                    {errors.toolStack}
+                  </p>
                 )}
 
                 {selectedToolsStack.length > 0 && (
@@ -674,9 +690,7 @@ export default function CreateWorkflow() {
                       exit="exit"
                       layout
                     >
-                      <fieldset
-                        className="border border-[#315168] p-6 ps-10 bg-[#182934] rounded-xl relative w-full hover:border-[#0D93F2]/40 transition-colors"
-                      >
+                      <fieldset className="border border-[#315168] p-6 ps-10 bg-[#182934] rounded-xl relative w-full hover:border-[#0D93F2]/40 transition-colors">
                         <legend className="sr-only">Step {index + 1}</legend>
                         <div className="bg-[#0D93F2] p-0.5 px-2 text-white font-bold text-sm rounded-full w-fit absolute left-0 top-4">
                           {index + 1}
@@ -953,29 +967,31 @@ export default function CreateWorkflow() {
                   <div className="py-2 px-0 flex items-center gap-2 justify-center">
                     {selectedToolsStack.length > 0 ? (
                       <>
-                        {selectedToolsStack.slice(0, 3).map((toolName, index) => {
-                          const matchedTool = apiTools.find(
-                            (t) => t.name === toolName
-                          );
-                          return (
-                            <div
-                              key={index}
-                              className="p-2 bg-[#1E293B] rounded-lg place-content-center"
-                            >
-                              {matchedTool?.image ? (
-                                <Image
-                                  src={matchedTool.image}
-                                  width={15}
-                                  height={15}
-                                  alt={toolName}
-                                  className="max-w-4 max-h-4"
-                                />
-                              ) : (
-                                <Image src={InsightIcon} alt="Tool icon" />
-                              )}
-                            </div>
-                          );
-                        })}
+                        {selectedToolsStack
+                          .slice(0, 3)
+                          .map((toolName, index) => {
+                            const matchedTool = apiTools.find(
+                              (t) => t.name === toolName,
+                            );
+                            return (
+                              <div
+                                key={index}
+                                className="p-2 bg-[#1E293B] rounded-lg place-content-center"
+                              >
+                                {matchedTool?.image ? (
+                                  <Image
+                                    src={matchedTool.image}
+                                    width={15}
+                                    height={15}
+                                    alt={toolName}
+                                    className="max-w-4 max-h-4"
+                                  />
+                                ) : (
+                                  <Image src={InsightIcon} alt="Tool icon" />
+                                )}
+                              </div>
+                            );
+                          })}
                         {selectedToolsStack.length > 3 && (
                           <p className="text-sm text-[#90B2CB]">
                             +{selectedToolsStack.length - 3} more
@@ -985,7 +1001,10 @@ export default function CreateWorkflow() {
                     ) : (
                       <>
                         {Array.from({ length: 3 }).map((_, index) => (
-                          <div key={index} className="p-2 bg-[#1E293B] rounded-lg">
+                          <div
+                            key={index}
+                            className="p-2 bg-[#1E293B] rounded-lg"
+                          >
                             <Image src={InsightIcon} alt="Tools Icons" />
                           </div>
                         ))}
@@ -1007,33 +1026,37 @@ export default function CreateWorkflow() {
                       </p>
                     </div>
                     <div className="flex flex-col gap-3">
-                      {stepData.some((s) => s.title) ? (
-                        stepData
-                          .filter((s) => s.title)
-                          .map((s, index) => (
-                            <div key={index} className="flex gap-3 items-center">
-                              <div className="w-6 h-6 shrink-0 place-content-center bg-[#0D93F2]/10 rounded-full px-2">
+                      {stepData.some((s) => s.title)
+                        ? stepData
+                            .filter((s) => s.title)
+                            .map((s, index) => (
+                              <div
+                                key={index}
+                                className="flex gap-3 items-center"
+                              >
+                                <div className="w-6 h-6 shrink-0 place-content-center bg-[#0D93F2]/10 rounded-full px-2">
+                                  <p className="font-bold text-xs text-[#0D93F2]">
+                                    {index + 1}
+                                  </p>
+                                </div>
+                                <p className="text-xs text-white/80 truncate">
+                                  {s.title}
+                                </p>
+                              </div>
+                            ))
+                        : Array.from({ length: 3 }).map((_, index) => (
+                            <div
+                              key={index}
+                              className="flex gap-3 items-center"
+                            >
+                              <div className="w-6 h-6 place-content-center bg-[#0D93F2]/10 rounded-full px-2">
                                 <p className="font-bold text-xs text-[#0D93F2]">
                                   {index + 1}
                                 </p>
                               </div>
-                              <p className="text-xs text-white/80 truncate">
-                                {s.title}
-                              </p>
+                              <div className="w-full py-1.5 bg-[#315168] rounded-lg h-fit"></div>
                             </div>
-                          ))
-                      ) : (
-                        Array.from({ length: 3 }).map((_, index) => (
-                          <div key={index} className="flex gap-3 items-center">
-                            <div className="w-6 h-6 place-content-center bg-[#0D93F2]/10 rounded-full px-2">
-                              <p className="font-bold text-xs text-[#0D93F2]">
-                                {index + 1}
-                              </p>
-                            </div>
-                            <div className="w-full py-1.5 bg-[#315168] rounded-lg h-fit"></div>
-                          </div>
-                        ))
-                      )}
+                          ))}
                     </div>
                   </div>
 
@@ -1043,8 +1066,10 @@ export default function CreateWorkflow() {
                       INSIGHT PREVIEW
                     </p>
                     <p className="text-sm text-[#90B2CB] line-clamp-3">
-                      &quot;{insight ||
-                        "I stopped using manual Google Sheets tracking for initial drafts..."}&quot;
+                      &quot;
+                      {insight ||
+                        "I stopped using manual Google Sheets tracking for initial drafts..."}
+                      &quot;
                     </p>
                   </div>
                 </div>

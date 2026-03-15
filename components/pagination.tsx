@@ -1,16 +1,19 @@
 import arrowIcon from "../assets/icons/arrow-icon.svg";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useState, useEffect } from "react";
 
 interface PaginationProps {
   page: number;
   setPage: (page: number) => void;
   totalPages: number;
-  hasNext: number;
-  hasPrevious: number
+  hasNext: boolean;
+  hasPrevious: boolean;
 }
 
 function Pagination({ page: _page, setPage: _setPage, totalPages, hasPrevious, hasNext }: PaginationProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   return (
     <motion.div
       className="flex items-center justify-center mt-16"
@@ -23,6 +26,7 @@ function Pagination({ page: _page, setPage: _setPage, totalPages, hasPrevious, h
           className="border-2 border-[#223949] bg-transparent text-[#0D93F2] text-base font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed p-2 rounded-lg"
           whileTap={{ scale: 0.97 }}
           whileHover={{ y: -1 }}
+          onClick={() => _setPage(_page - 1)}
           disabled={!hasPrevious}
         >
           <Image
@@ -37,8 +41,9 @@ function Pagination({ page: _page, setPage: _setPage, totalPages, hasPrevious, h
             key={i}
             whileTap={{ scale: 0.97 }}
             whileHover={{ y: -1 }}
-            className={`border-2 border-[#223949] rounded-lg bg-primary text-white text-base font-medium cursor-pointer px-3 py-1 ${
-              i === 0
+            onClick={() => _setPage(i+1)}
+            className={`border-2 border-[#223949] rounded-lg text-base font-medium cursor-pointer px-3 py-1 ${
+              mounted && i + 1 === _page
                 ? "bg-primary text-white"
                 : "bg-transparent text-[#0D93F2]"
             }`}
@@ -51,6 +56,7 @@ function Pagination({ page: _page, setPage: _setPage, totalPages, hasPrevious, h
           className="border-2 border-[#223949] rounded-lg bg-transparent text-[#0D93F2] text-base font-medium cursor-pointer p-2 disabled:cursor-not-allowed disabled:opacity-50"
           whileTap={{ scale: 0.97 }}
           whileHover={{ y: -1 }}
+          onClick={() => _setPage(_page + 1)}
           disabled={!hasNext}
         >
           <Image
