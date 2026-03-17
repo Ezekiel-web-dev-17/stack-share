@@ -63,7 +63,7 @@ const TABS: string[] = [
   "Developer",
   "Designer",
   "Marketer",
-  "Product Manager",
+  "Product Management",
   "Data Analyst",
   "Content Creator",
   "Operations",
@@ -199,6 +199,8 @@ export default function Explore() {
         },
       })
         .then((res) => {
+          alert("liked")
+          console.log(res);
           if (!res.ok) throw new Error("Like failed");
           return res.json() as Promise<{ data: Workflow }>;
         })

@@ -21,7 +21,7 @@ export async function POST(
         method: "POST",
         headers: {
             Authorization: authHeader,
-        },
+        }
     });
 
     const data = await backendRes.json().catch(() => null);

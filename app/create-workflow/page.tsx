@@ -119,7 +119,6 @@ export default function CreateWorkflow() {
       },
     })
       .then((res) => {
-        console.log("Response: ", res);
         if (!res.ok) throw new Error("Failed to load tools");
         return res.json();
       })
@@ -288,8 +287,6 @@ export default function CreateWorkflow() {
         },
         body: formData,
       });
-
-      console.log(res);
 
       const data = await res.json().catch(() => null);
 
