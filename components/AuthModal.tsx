@@ -60,8 +60,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
-  const [regAdminSecret, setRegAdminSecret] = useState("");
-  const [showAdminField, setShowAdminField] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // close on Escape
   const handleKeyDown = useCallback(
@@ -130,9 +129,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   /* ── Register handler ──────────────────────────────────── */
   // The backend accepts an optional `role` field: "ADMIN" | "USER"
-  // We use the hidden admin-secret input to gate ADMIN access.
-  const ADMIN_PASSPHRASE =
-    process.env.NEXT_PUBLIC_ADMIN_PASSPHRASE ?? "STACKSHARE_ADMIN_2025";
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -140,8 +136,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null);
     setSuccess(null);
 
-    const isAdmin =
-      regAdminSecret.trim() !== "" && regAdminSecret === ADMIN_PASSPHRASE;
     const role = isAdmin ? "ADMIN" : "USER";
 
     try {
@@ -372,9 +366,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       <button
                         id="admin-toggle"
                         type="button"
-                        onClick={() => setShowAdminField((p) => !p)}
-                        aria-expanded={showAdminField}
-                        aria-controls="admin-secret-field"
+                        onClick={() => setIsAdmin((p) => !p)}
+                        aria-expanded={isAdmin}
                         className="flex w-full items-center justify-between rounded-lg border border-dashed border-[#1e293b] px-3 py-2 text-xs transition-colors hover:border-accent-purple/40 hover:bg-accent-purple/5 cursor-pointer"
                       >
                         <span className="flex items-center gap-2 text-[#475569]">
@@ -394,51 +387,25 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         {/* toggle pill */}
                         <span
                           className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-200 ${
-                            showAdminField ? "bg-accent-purple" : "bg-[#1e293b]"
+                            isAdmin ? "bg-accent-purple" : "bg-[#1e293b]"
                           }`}
                         >
                           <span
                             className={`inline-block h-3 w-3 rounded-full bg-white shadow transition-transform duration-200 ${
-                              showAdminField ? "translate-x-3.5" : "translate-x-0.5"
+                              isAdmin
+                                ? "translate-x-3.5"
+                                : "translate-x-0.5"
                             }`}
                           />
                         </span>
                       </button>
 
-                      <AnimatePresence>
-                        {showAdminField && (
-                          <motion.div
-                            id="admin-secret-field"
-                            key="admin-field"
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="rounded-lg border border-accent-purple/20 bg-accent-purple/5 p-3">
-                              <FormField
-                                id="admin-secret"
-                                label="Admin passphrase"
-                                type="password"
-                                value={regAdminSecret}
-                                onChange={setRegAdminSecret}
-                                placeholder="Enter admin passphrase"
-                                autoComplete="off"
-                                labelExtra={
-                                  <span className="rounded bg-accent-purple/15 px-1.5 py-0.5 text-[10px] font-medium text-accent-purple">
-                                    Admin only
-                                  </span>
-                                }
-                              />
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
                       <StatusBanner error={error} success={success} />
 
-                      <SubmitButton loading={isLoading} label="Create Account" />
+                      <SubmitButton
+                        loading={isLoading}
+                        label="Create Account"
+                      />
                     </motion.form>
                   )}
                 </AnimatePresence>
@@ -555,13 +522,7 @@ function StatusBanner({
   );
 }
 
-function SubmitButton({
-  loading,
-  label,
-}: {
-  loading: boolean;
-  label: string;
-}) {
+function SubmitButton({ loading, label }: { loading: boolean; label: string }) {
   return (
     <motion.button
       id="auth-submit-btn"
