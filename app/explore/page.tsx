@@ -189,7 +189,7 @@ export default function Explore() {
         addOptimisticWorkflowUpdate({ id });
       });
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
       fetch(`/api/workflows/${id}/like`, {
         method: "POST",
@@ -199,14 +199,14 @@ export default function Explore() {
         },
       })
         .then((res) => {
-          alert("liked")
-          console.log(res);
           if (!res.ok) throw new Error("Like failed");
-          return res.json() as Promise<{ data: Workflow }>;
+          return res.json() as Promise<{ data: { id: string; likes: number } }>;
         })
         .then(({ data }) =>
           setWorkflows((prev) =>
-            prev.map((w) => (w.id === data.id ? data : w)),
+            prev.map((w) =>
+              w.id === data.id ? { ...w, likes: data.likes } : w,
+            ),
           ),
         )
         .catch((err) => console.error("[like]", err));
@@ -217,7 +217,7 @@ export default function Explore() {
   // ─── Fetch tools once ─────────────────────────────────────────────────────
 
   useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
     fetch(`/api/tools`, {
       headers: {
@@ -255,7 +255,7 @@ export default function Explore() {
         pg,
       );
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
       fetch(url, { 
         headers: {
@@ -460,7 +460,7 @@ export default function Explore() {
                               </span>
                               <Image src={Person} alt="person icon" />
                               <p className="text-sm text-[#94A3B8]">
-                                @{workflow.author.name}&nbsp;•&nbsp;
+                                @{workflow.author?.name}&nbsp;•&nbsp;
                                 {timeAgo(workflow.createdAt)}
                               </p>
                             </div>

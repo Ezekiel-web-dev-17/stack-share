@@ -253,8 +253,7 @@ export default function CreateWorkflow() {
 
     try {
       const token =
-        // typeof window !== "undefined" ? localStorage.getItem("token") : null;
-        process.env.NEXT_PUBLIC_ACCESS_TOKEN;
+        typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
       const formData = new FormData();
       formData.append("title", title.trim());

@@ -188,7 +188,7 @@ export default function DiscoverMain() {
   useEffect(() => {
     const controller = new AbortController();
     const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
     setLoading(true);
     setError(null);
